@@ -16,6 +16,10 @@ if __name__ == '__main__':
         while True:
             try:
                 source = input("SuperLang (⌐■_■) > ")
+                # fixing the issue with empty line enterred by user
+                # looks cleaner now lol
+                if not source.strip():
+                    continue
                 if source.strip().lower() in ("exit", "quit"):
                     break
                 source_lines.append(source)
@@ -36,5 +40,10 @@ if __name__ == '__main__':
                 if len(source_lines) > 1:
                     interpreter.functions = setup_interpreter.functions.copy()
                 interpreter.program()
+                # Remove last line if it's a say or function call to prevent repeats
+                if last_line.strip().startswith("say") or (
+                    last_line.strip().startswith("func") and "{" not in last_line and "=" not in last_line
+                ):
+                    source_lines.pop()
             except Exception as e:
                 print("Error:", e)

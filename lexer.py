@@ -28,8 +28,8 @@ class Lexer:
                     i += 1
                 if ident == 'true' or ident == 'false':
                     self.tokens.append(Token(BOOL, ident == 'true'))
-                elif ident == 'print':
-                    self.tokens.append(Token(PRINT, ident))
+                elif ident == 'say':
+                    self.tokens.append(Token(SAY, ident))
                 elif ident == 'if':
                     self.tokens.append(Token(IF, ident))
                 elif ident == 'else':

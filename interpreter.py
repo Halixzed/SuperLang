@@ -55,7 +55,7 @@ class Interpreter:
             self.consume()
             value = self.expression()
             return {'return': True, 'value': value}
-        elif token and token.type == PRINT:
+        elif token and token.type == SAY:
             self.consume()
             value = self.expression()
             print(value)
