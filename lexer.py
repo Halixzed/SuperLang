@@ -12,6 +12,11 @@ class Lexer:
             if c.isspace():
                 i += 1
                 continue
+            if c == '#':
+                # handling comments --- new feature
+                while i < len(self.source) and self.source[i] != '\n':
+                    i += 1
+                continue
             if c.isdigit():
                 num = c
                 i += 1
