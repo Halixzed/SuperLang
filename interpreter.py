@@ -24,12 +24,19 @@ class Interpreter:
 
     def program(self):
         while self.pos < len(self.tokens):
+            token = self.peek()
+            if token and token.type == SEMICOLON:
+                self.consume()
+                continue
             result = self.statement()
             if isinstance(result, dict) and result.get('return', False):
                 break
 
     def statement(self):
         token = self.peek()
+        if token and token.type == SEMICOLON:
+            self.consume()
+            return None
         if token and token.type == FUNC:
             return self.function_definition()
         if token and token.type == IF:

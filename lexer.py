@@ -124,5 +124,9 @@ class Lexer:
                 i += 1  # skip closing quote
                 self.tokens.append(Token(STRING, s))
                 continue
+            if c == ';':
+                self.tokens.append(Token(SEMICOLON, c))
+                i += 1
+                continue
             raise Exception(f"Unknown character: {c}")
         return self.tokens
