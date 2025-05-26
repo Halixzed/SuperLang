@@ -1,0 +1,13 @@
+say "Stage 4: Global variables";
+quickMaths = 10;
+quickMaths = quickMaths + 2;
+say quickMaths;
+floatTest = 1.0;
+floatTest = floatTest + 5;
+say floatTest;
+stringCatTest = "10 corgis";
+stringCatTest = stringCatTest + 5 + " more corgis";
+say stringCatTest;
+errorTest = 5;
+errorTest = errorTest + "insert string here";
+say errorTest;
