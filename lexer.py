@@ -12,18 +12,29 @@ class Lexer:
             if c.isspace():
                 i += 1
                 continue
-            if c == '#':
-                # handling comments --- new feature
+            # Skip single-line comments
+            if c == '/' and i + 1 < len(self.source) and self.source[i + 1] == '/':
                 while i < len(self.source) and self.source[i] != '\n':
                     i += 1
                 continue
             if c.isdigit():
                 num = c
                 i += 1
-                while i < len(self.source) and self.source[i].isdigit():
+                has_dot = False
+                while i < len(self.source) and (self.source[i].isdigit() or (self.source[i] == '.' and not has_dot)):
+                    if self.source[i] == '.':
+                        has_dot = True
                     num += self.source[i]
                     i += 1
-                self.tokens.append(Token(NUMBER, int(num)))
+                if has_dot:
+                    self.tokens.append(Token(FLOAT, float(num)))  # FLOAT token for floats
+                else:
+                    self.tokens.append(Token(NUMBER, int(num)))  # NUMBER token for integers
+                continue
+            if c == '#':
+                # handling comments --- new feature
+                while i < len(self.source) and self.source[i] != '\n':
+                    i += 1
                 continue
             if c.isalpha() or c == '_':
                 ident = c
@@ -32,7 +43,14 @@ class Lexer:
                     ident += self.source[i]
                     i += 1
                 if ident == 'true' or ident == 'false':
-                    self.tokens.append(Token(BOOL, ident == 'true'))
+                    # Store as string, not Python bool
+                    self.tokens.append(Token(BOOL, ident))
+                elif ident == 'and':
+                    self.tokens.append(Token(AND, ident))
+                elif ident == 'or':
+                    self.tokens.append(Token(OR, ident))
+                elif ident == 'not':
+                    self.tokens.append(Token(NOT, ident))
                 elif ident == 'say':
                     self.tokens.append(Token(SAY, ident))
                 elif ident == 'if':

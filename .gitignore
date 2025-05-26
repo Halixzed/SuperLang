@@ -1,2 +1,7 @@
 __pycache__/
-test.sl
+stage_tests_commands_controlflow.sl
+stage_tests_commands.sl
+stage_tests_superlang.sl
+stage_tests_functions.sl
+test_source.sl
+arithmetic.sl

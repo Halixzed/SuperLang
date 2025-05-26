@@ -1,5 +1,6 @@
 # mytoken.py
 NUMBER = 'NUMBER'
+FLOAT = 'FLOAT'
 PLUS = 'PLUS'
 MINUS = 'MINUS'
 MUL = 'MUL'
@@ -31,6 +32,8 @@ COLON = 'COLON'
 FUNC = 'FUNC'
 RETURN = 'RETURN'
 SEMICOLON = 'SEMICOLON'
+
+
 
 class Token:
     def __init__(self, type_, value):
