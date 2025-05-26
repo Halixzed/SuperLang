@@ -5,3 +5,4 @@ stage_tests_superlang.sl
 stage_tests_functions.sl
 test_source.sl
 arithmetic.sl
+INSTALL.md

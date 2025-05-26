@@ -12,4 +12,13 @@ If you do not have Python installed:
 - Download Python from [python.org/downloads](https://www.python.org/downloads/)
 - Install Python and ensure you check **"Add Python to PATH"** during installation.
 
-To verify Python is installed, open a terminal and run:
+---
+
+## 2. Download SuperLang
+
+- Download or clone the SuperLang source code to your PC.
+
+---
+
+## 3. Run SuperLang
+
