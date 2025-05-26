@@ -1,3 +1,4 @@
+from time import sleep
 from lexer import Lexer
 from interpreter import Interpreter
 import sys
@@ -22,6 +23,8 @@ if __name__ == '__main__':
                     continue
                 # Exit condition
                 if source.strip().lower() in ("exit", "quit"):
+                    print("Exiting SuperLang. Stay frosty (⌐■_■)!")
+                    sleep(1)
                     break
 
                 # Tokenize and interpret the current input

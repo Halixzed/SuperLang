@@ -40,10 +40,16 @@ class Interpreter:
         if token and token.type == SEMICOLON:
             self.consume()
             return None
-        # Fix: gracefully skip stray RBRACE tokens (end of block)
-        if token and token.type == RBRACE:
-            self.consume()
-            return None
+        # Remove: skip stray COMMA, RBRACE, RBRACKET tokens
+        # if token and token.type == COMMA:
+        #     self.consume()
+        #     return None
+        # if token and token.type == RBRACE:
+        #     self.consume()
+        #     return None
+        # if token and token.type == RBRACKET:
+        #     self.consume()
+        #     return None
         if token and token.type == FUNC:
             return self.function_definition()
         if token and token.type == RETURN:
@@ -211,7 +217,8 @@ class Interpreter:
         if token is None:
             raise Exception("Expected value but got end of input.")
         elif token.type == NUMBER:
-            return float(self.consume().value)
+            # Return int for NUMBER, float for FLOAT
+            return int(self.consume().value)
         elif token.type == FLOAT:
             return float(self.consume().value)
         elif token.type == BOOL:
