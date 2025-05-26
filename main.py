@@ -15,6 +15,8 @@ if __name__ == '__main__':
         while True:
             try:
                 source = input("SuperLang (⌐■_■) > ")
+                # Replace Unicode minus (en dash/em dash) with ASCII minus
+                source = source.replace("–", "-").replace("—", "-")
                 # Ignore empty input
                 if not source.strip():
                     continue
