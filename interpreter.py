@@ -5,7 +5,7 @@ class Interpreter:
         self.tokens = tokens
         self.pos = 0
         self.globals = {}
-        self.functions = {}
+        self.functions = {}  # Add back function storage
 
     def peek(self):
         return self.tokens[self.pos] if self.pos < len(self.tokens) else None
@@ -28,42 +28,59 @@ class Interpreter:
             if token and token.type == SEMICOLON:
                 self.consume()
                 continue
-            result = self.statement()
-            if isinstance(result, dict) and result.get('return', False):
-                break
+            try:
+                result = self.statement()
+                if result is not None:
+                    print(result)
+            except Exception as e:
+                print(f"Error: {e}")
 
-    def statement(self):
+    def statement(self, local_vars=None):
         token = self.peek()
         if token and token.type == SEMICOLON:
             self.consume()
             return None
+        # Remove: skip stray COMMA, RBRACE, RBRACKET tokens
+        # if token and token.type == COMMA:
+        #     self.consume()
+        #     return None
+        # if token and token.type == RBRACE:
+        #     self.consume()
+        #     return None
+        # if token and token.type == RBRACKET:
+        #     self.consume()
+        #     return None
         if token and token.type == FUNC:
             return self.function_definition()
-        if token and token.type == IF:
-            return self.if_statement()
-        if token and token.type == WHILE:
-            return self.while_statement()
-        if token and token.type == IDENTIFIER:
-            var_token = self.consume()
-            if self.match(ASSIGN):
-                value = self.expression()
-                self.globals[var_token.value] = value
-                return value
-            else:
-                self.pos -= 1
         if token and token.type == RETURN:
             self.consume()
-            value = self.expression()
+            value = self.expression(local_vars)
             return {'return': True, 'value': value}
-        elif token and token.type == SAY:
+        if token and token.type == IDENTIFIER:
+            var_token = self.consume()
+            if self.peek() and self.peek().type == ASSIGN:
+                self.consume()
+                value = self.expression(local_vars)
+                if local_vars is not None:
+                    local_vars[var_token.value] = value
+                else:
+                    self.globals[var_token.value] = value
+                return None
+            else:
+                self.pos -= 1
+        if token and token.type == SAY:
             self.consume()
-            value = self.expression()
+            value = self.expression(local_vars)
             print(value)
             return None
-        return self.expression()
+        if token and token.type == IF:
+            return self.if_statement(local_vars)
+        if token and token.type == WHILE:
+            return self.while_statement(local_vars)
+        return self.expression(local_vars)
 
     def function_definition(self):
-        self.consume()  # consume FUNC
+        self.consume()  # consume 'func'
         name_token = self.consume()
         if name_token.type != IDENTIFIER:
             raise Exception("Expected function name after 'func'")
@@ -99,25 +116,20 @@ class Interpreter:
             raise Exception(f"Undefined function '{name}'")
         params, body_start, body_end = self.functions[name]
         if len(args) != len(params):
-            raise Exception(f"Function '{name}' expects {len(params)} arguments")
+            raise Exception(f"Function '{name}' expects {len(params)} arguments, got {len(args)}")
         saved_pos = self.pos
-        saved_globals = self.globals.copy()
+        local_vars = dict(zip(params, args))
         self.pos = body_start
-        for i, param in enumerate(params):
-            self.globals[param] = args[i]
         ret = None
         while self.pos < body_end:
-            result = self.statement()
+            result = self.statement(local_vars)
             if isinstance(result, dict) and result.get('return', False):
                 ret = result['value']
                 break
-        self.globals = saved_globals
         self.pos = saved_pos
         return ret
 
-    def expression(self):
-        return self.parse_binary(0)
-
+    # Operator precedence for all supported operators
     PRECEDENCE = {
         OR: 1,
         AND: 2,
@@ -126,123 +138,186 @@ class Interpreter:
         MUL: 5, DIV: 5,
     }
 
-    def parse_binary(self, min_prec):
-        left = self.unary()
+    def expression(self, local_vars=None):
+        return self.parse_binary(0, local_vars)
+
+    def parse_binary(self, min_prec, local_vars=None):
+        left = self.unary(local_vars)
         while True:
             op_token = self.peek()
             if op_token and op_token.type in self.PRECEDENCE and self.PRECEDENCE[op_token.type] >= min_prec:
                 prec = self.PRECEDENCE[op_token.type]
                 self.consume()
-                right = self.parse_binary(prec + 1)
-                if op_token.type == PLUS:
-                    left = left + right
-                elif op_token.type == MINUS:
-                    left = left - right
-                elif op_token.type == MUL:
-                    left = left * right
-                elif op_token.type == DIV:
-                    left = left / right
-                elif op_token.type == EQ:
-                    left = left == right
-                elif op_token.type == NEQ:
-                    left = left != right
-                elif op_token.type == LT:
-                    left = left < right
-                elif op_token.type == GT:
-                    left = left > right
-                elif op_token.type == AND:
-                    left = left and right
-                elif op_token.type == OR:
-                    left = left or right
-                else:
-                    raise Exception(f"Unknown operator: {op_token.type}")
+                right = self.parse_binary(prec + 1, local_vars)
+                left = self.apply_operator(op_token.type, left, right)
             else:
                 break
         return left
 
-    def unary(self):
+    def apply_operator(self, op_type, left, right):
+        # Arithmetic
+        if op_type == PLUS:
+            if isinstance(left, str) or isinstance(right, str):
+                return str(left) + str(right)
+            return left + right
+        elif op_type == MINUS:
+            if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+                return left - right
+            raise Exception("Invalid types for '-'")
+        elif op_type == MUL:
+            if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+                return left * right
+            raise Exception("Invalid types for '*'")
+        elif op_type == DIV:
+            if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+                return left / right
+            raise Exception("Invalid types for '/'")
+        # Boolean logic
+        elif op_type == EQ:
+            return left == right
+        elif op_type == NEQ:
+            return left != right
+        elif op_type == LT:
+            if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+                return left < right
+            raise Exception("Invalid types for '<'")
+        elif op_type == GT:
+            if isinstance(left, (int, float)) and isinstance(right, (int, float)):
+                return left > right
+            raise Exception("Invalid types for '>'")
+        elif op_type == AND:
+            if isinstance(left, bool) and isinstance(right, bool):
+                return left and right
+            raise Exception("Invalid types for 'and'")
+        elif op_type == OR:
+            if isinstance(left, bool) and isinstance(right, bool):
+                return left or right
+            raise Exception("Invalid types for 'or'")
+        else:
+            raise Exception(f"Unexpected operator: {op_type}")
+
+    def unary(self, local_vars=None):
         if self.peek() and self.peek().type == NOT:
             self.consume()
-            return not self.unary()
+            value = self.unary(local_vars)
+            if not isinstance(value, bool):
+                raise Exception("Unary '!' only valid for booleans")
+            return not value
         elif self.peek() and self.peek().type == MINUS:
             self.consume()
-            return -self.unary()
+            value = self.unary(local_vars)
+            if not isinstance(value, (int, float)):
+                raise Exception("Unary '-' only valid for numbers")
+            return -value
         else:
-            return self.primary()
+            return self.primary(local_vars)
 
-    def primary(self):
+    def primary(self, local_vars=None):
         token = self.peek()
         if token is None:
             raise Exception("Expected value but got end of input.")
-        if token.type in (NUMBER, BOOL, STRING):
-            value = self.consume().value
+        elif token.type == NUMBER:
+            # Return int for NUMBER, float for FLOAT
+            return int(self.consume().value)
+        elif token.type == FLOAT:
+            return float(self.consume().value)
+        elif token.type == BOOL:
+            val = self.consume().value
+            if val == "true":
+                return True
+            elif val == "false":
+                return False
+            else:
+                raise Exception(f"Invalid boolean value: {val}")
+        elif token.type == STRING:
+            return self.consume().value
         elif token.type == IDENTIFIER:
             name = self.consume().value
+            # Built-in function: select_sample()
+            if name == "select_sample" and self.peek() and self.peek().type == LPAREN:
+                self.consume()  # consume '('
+                if not self.match(RPAREN):
+                    raise Exception("select_sample() takes no arguments")
+                self.run_sample_selector()
+                return None
             if self.peek() and self.peek().type == LPAREN:
                 self.consume()
                 args = []
                 while self.peek() and self.peek().type != RPAREN:
-                    args.append(self.expression())
+                    args.append(self.expression(local_vars))
                     if self.peek() and self.peek().type == COMMA:
                         self.consume()
                 if not self.match(RPAREN):
                     raise Exception("Expected ')' after arguments")
                 return self.call_function(name, args)
+            elif local_vars is not None and name in local_vars:
+                value = local_vars[name]
             elif name in self.globals:
                 value = self.globals[name]
             else:
                 raise Exception(f"Undefined variable '{name}'")
+            # Support indexing: mylist[2] or mydict["b"]
+            while self.peek() and self.peek().type == LBRACKET:
+                self.consume()
+                index = self.expression(local_vars)
+                if isinstance(value, list):
+                    # Convert float/int index to int for lists
+                    if not isinstance(index, int):
+                        if isinstance(index, float) and index.is_integer():
+                            index = int(index)
+                        else:
+                            raise Exception("List indices must be integers")
+                if not self.match(RBRACKET):
+                    raise Exception("Missing closing bracket for index.")
+                value = value[index]
+            return value
         elif token.type == LPAREN:
             self.consume()
-            value = self.expression()
+            value = self.expression(local_vars)
             if not self.match(RPAREN):
                 raise Exception("Missing closing parenthesis.")
-        elif token.type == LBRACKET:
+            return value
+        elif token.type == LBRACE:
+            # List literal: {1, 2, 3}
             self.consume()
             elements = []
-            while self.peek() and self.peek().type != RBRACKET:
-                elements.append(self.expression())
-                if self.peek() and self.peek().type == COMMA:
-                    self.consume()
-            if not self.match(RBRACKET):
-                raise Exception("Missing closing bracket for list.")
-            value = elements
-        elif token.type == LBRACE:
-            self.consume()
-            dct = {}
             while self.peek() and self.peek().type != RBRACE:
-                key_token = self.consume()
-                if key_token.type == STRING:
-                    key = key_token.value
-                elif key_token.type == IDENTIFIER:
-                    key = key_token.value
-                else:
-                    raise Exception("Dictionary keys must be strings or identifiers.")
-                if not self.match(COLON):
-                    raise Exception("Expected ':' after dictionary key.")
-                val = self.expression()
-                dct[key] = val
+                elements.append(self.expression(local_vars))
                 if self.peek() and self.peek().type == COMMA:
                     self.consume()
             if not self.match(RBRACE):
-                raise Exception("Missing closing brace for dictionary.")
-            value = dct
+                raise Exception("Missing closing brace for list.")
+            return elements
+
+        elif token.type == LBRACKET:
+            # Dictionary literal: ["a": 1, "b": 2]
+            self.consume()
+            d = {}
+            while self.peek() and self.peek().type != RBRACKET:
+                key = self.expression(local_vars)
+                if not self.match(COLON):
+                    raise Exception("Expected ':' in dictionary")
+                value = self.expression(local_vars)
+                d[key] = value
+                if self.peek() and self.peek().type == COMMA:
+                    self.consume()
+            if not self.match(RBRACKET):
+                raise Exception("Missing closing bracket for dictionary.")
+            return d
+
+        # Fix: gracefully handle stray ASSIGN tokens (e.g. from malformed input)
+        if token.type == ASSIGN:
+            self.consume()
+            # Skip and try to continue parsing
+            return self.primary(local_vars)
         else:
             raise Exception(f"Unexpected token: {token}")
 
-        while self.peek() and self.peek().type == LBRACKET:
-            self.consume()
-            index = self.expression()
-            if not self.match(RBRACKET):
-                raise Exception("Missing closing bracket for index.")
-            value = value[index]
-        return value
-
-    def if_statement(self):
-        self.consume()  # consume IF
+    def if_statement(self, local_vars=None):
+        self.consume()
         if not self.match(LPAREN):
             raise Exception("Expected '(' after 'if'")
-        condition = self.expression()
+        condition = self.expression(local_vars)
         if not self.match(RPAREN):
             raise Exception("Expected ')' after condition")
         if not self.match(LBRACE):
@@ -274,22 +349,23 @@ class Interpreter:
             saved_pos = self.pos
             self.pos = if_block_start
             while self.pos < if_block_end:
-                self.statement()
+                self.statement(local_vars)
             self.pos = saved_pos
         elif else_block_start is not None:
             saved_pos = self.pos
             self.pos = else_block_start
             while self.pos < else_block_end:
-                self.statement()
+                self.statement(local_vars)
             self.pos = saved_pos
         return None
 
-    def while_statement(self):
-        self.consume()  # consume WHILE
+    def while_statement(self, local_vars=None):
+        self.consume()
         if not self.match(LPAREN):
             raise Exception("Expected '(' after 'while'")
         condition_start = self.pos
-        condition = self.expression()
+        saved_condition_pos = self.pos
+        condition = self.expression(local_vars)
         if not self.match(RPAREN):
             raise Exception("Expected ')' after condition")
         if not self.match(LBRACE):
@@ -306,14 +382,42 @@ class Interpreter:
 
         while True:
             saved_pos = self.pos
-            self.pos = condition_start
-            cond = self.expression()
+            self.pos = saved_condition_pos
+            cond = self.expression(local_vars)
             self.pos = saved_pos
             if not cond:
                 break
             saved_pos = self.pos
             self.pos = block_start
             while self.pos < block_end:
-                self.statement()
+                self.statement(local_vars)
             self.pos = saved_pos
         return None
+
+    def run_sample_selector(self):
+        import os
+        # Import Lexer and Interpreter here to ensure they are available
+        from lexer import Lexer
+        from interpreter import Interpreter
+        samples_dir = os.path.join(os.path.dirname(__file__), "StageSamples")
+        if not os.path.isdir(samples_dir):
+            print("No StageSamples directory found.")
+            return
+        sample_files = [f for f in os.listdir(samples_dir) if f.endswith(".sl")]
+        if not sample_files:
+            print("No .sl sample files found in StageSamples.")
+            return
+        print("Sample .sl files in StageSamples:")
+        for idx, fname in enumerate(sample_files):
+            print(f"{idx+1}: {fname}")
+        choice = input("Enter number to run a sample, or press Enter to cancel: ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(sample_files):
+            fname = sample_files[int(choice)-1]
+            with open(os.path.join(samples_dir, fname), "r") as f:
+                source = f.read()
+            lexer = Lexer(source)
+            tokens = lexer.tokenize()
+            interpreter = Interpreter(tokens)
+            interpreter.program()
+        else:
+            print("No sample selected.")
