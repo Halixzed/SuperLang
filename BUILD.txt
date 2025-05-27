@@ -48,7 +48,7 @@ c) To run sample files:
 --------------------------
 5. Uninstallation
 --------------------------
-- Simply delete the SuperLang folder.
+- Simply delete the SuperLang folder...........
 
 --------------------------
 6. Troubleshooting

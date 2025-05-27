@@ -7,7 +7,7 @@ while (i < 5) {
 }
 say sum;
 
-// Limited loop for shopping list
+// Limited loop for shopping list - done in order not to create endless loop
 is_running = true;
 shopping_list = "";
 count = 0;
