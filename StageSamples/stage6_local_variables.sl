@@ -1,5 +1,5 @@
 say "Stage 6: Local Variables";
-
+// Extra features
 // Local variables inside a function should not affect globals
 x = 100;
 func test_local() {

@@ -1,6 +1,6 @@
-from time import sleep
 from lexer import Lexer
 from interpreter import Interpreter
+from time import sleep
 import sys
 
 if __name__ == '__main__':
@@ -13,17 +13,16 @@ if __name__ == '__main__':
         interpreter.program()
     else:
         globals_state = {}
+        functions_state = {}
         while True:
             try:
                 source = input("SuperLang (⌐■_■) > ")
-                # Replace Unicode minus (en dash/em dash) with ASCII minus
-                source = source.replace("–", "-").replace("—", "-")
                 # Ignore empty input
                 if not source.strip():
                     continue
                 # Exit condition
                 if source.strip().lower() in ("exit", "quit"):
-                    print("Exiting SuperLang. Stay frosty (⌐■_■)!")
+                    print("Exiting SuperLang. Stay Frosty (⌐■_■)!")
                     sleep(1)
                     break
 
@@ -32,14 +31,16 @@ if __name__ == '__main__':
                 tokens = lexer.tokenize()
                 interpreter = Interpreter(tokens)
 
-                # Restore global state only
+                # Restore global and function states
                 interpreter.globals = globals_state.copy()
+                interpreter.functions = functions_state.copy()
 
                 # Run the program
                 interpreter.program()
 
-                # Save global state for the next input
+                # Save global and function states for the next input
                 globals_state = interpreter.globals.copy()
+                functions_state = interpreter.functions.copy()
 
             except Exception as e:
                 print("Error:", e)

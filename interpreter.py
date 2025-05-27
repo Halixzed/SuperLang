@@ -233,7 +233,13 @@ class Interpreter:
             return self.consume().value
         elif token.type == IDENTIFIER:
             name = self.consume().value
-            value = None
+            # Built-in function: select_sample()
+            if name == "select_sample" and self.peek() and self.peek().type == LPAREN:
+                self.consume()  # consume '('
+                if not self.match(RPAREN):
+                    raise Exception("select_sample() takes no arguments")
+                self.run_sample_selector()
+                return None
             if self.peek() and self.peek().type == LPAREN:
                 self.consume()
                 args = []
@@ -387,3 +393,31 @@ class Interpreter:
                 self.statement(local_vars)
             self.pos = saved_pos
         return None
+
+    def run_sample_selector(self):
+        import os
+        # Import Lexer and Interpreter here to ensure they are available
+        from lexer import Lexer
+        from interpreter import Interpreter
+        samples_dir = os.path.join(os.path.dirname(__file__), "StageSamples")
+        if not os.path.isdir(samples_dir):
+            print("No StageSamples directory found.")
+            return
+        sample_files = [f for f in os.listdir(samples_dir) if f.endswith(".sl")]
+        if not sample_files:
+            print("No .sl sample files found in StageSamples.")
+            return
+        print("Sample .sl files in StageSamples:")
+        for idx, fname in enumerate(sample_files):
+            print(f"{idx+1}: {fname}")
+        choice = input("Enter number to run a sample, or press Enter to cancel: ").strip()
+        if choice.isdigit() and 1 <= int(choice) <= len(sample_files):
+            fname = sample_files[int(choice)-1]
+            with open(os.path.join(samples_dir, fname), "r") as f:
+                source = f.read()
+            lexer = Lexer(source)
+            tokens = lexer.tokenize()
+            interpreter = Interpreter(tokens)
+            interpreter.program()
+        else:
+            print("No sample selected.")

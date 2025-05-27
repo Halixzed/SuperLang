@@ -1,0 +1,61 @@
+SuperLang Build & Run Instructions
+==================================
+
+SuperLang is a pure Python project. No build step or external dependencies are required.
+
+--------------------------
+1. Requirements
+--------------------------
+- Python 3.7 or newer (tested up to Python 3.11)
+- Works on Windows, macOS, and Linux
+
+--------------------------
+2. Installation
+--------------------------
+a) Install Python:
+   - Download from https://www.python.org/downloads/
+   - During installation, check "Add Python to PATH".
+
+b) (Optional) Verify Python installation:
+   - Open a terminal or command prompt.
+   - Run:
+        python --version
+     or
+        python3 --version
+
+--------------------------
+3. Running SuperLang
+--------------------------
+a) To run a SuperLang script:
+   - Place your `.sl` file in the project directory.
+   - Run:
+        python main.py yourscript.sl
+
+b) To use the interactive REPL:
+   - Run:
+        python main.py
+
+c) To run sample files:
+   - Place `.sl` files in the `StageSamples` directory.
+   - In the REPL, type:
+        select_sample()
+
+--------------------------
+4. Dependencies
+--------------------------
+- No external dependencies. Only the Python standard library is used.
+
+--------------------------
+5. Uninstallation
+--------------------------
+- Simply delete the SuperLang folder.
+
+--------------------------
+6. Troubleshooting
+--------------------------
+- If you see "python not found", ensure Python is installed and added to your PATH.
+- If you see "ModuleNotFoundError", ensure all SuperLang files are in the same directory.
+- For "Unknown character" errors, ensure your `.sl` files use standard ASCII characters.
+
+--------------------------
+Enjoy using SuperLang!
