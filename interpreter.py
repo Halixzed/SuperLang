@@ -40,7 +40,7 @@ class Interpreter:
         if token and token.type == SEMICOLON:
             self.consume()
             return None
-        # Remove: skip stray COMMA, RBRACE, RBRACKET tokens
+        # stray commas etcv 
         # if token and token.type == COMMA:
         #     self.consume()
         #     return None
@@ -305,7 +305,7 @@ class Interpreter:
                 raise Exception("Missing closing bracket for dictionary.")
             return d
 
-        # Fix: gracefully handle stray ASSIGN tokens (e.g. from malformed input)
+        # Fixing handling stray ASSIGN tokens (e.g. from malformed input)
         if token.type == ASSIGN:
             self.consume()
             # Skip and try to continue parsing
