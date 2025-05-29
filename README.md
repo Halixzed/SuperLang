@@ -1,4 +1,8 @@
-﻿# SuperLang
+![alt text](SuperLang.gif)
+
+---
+ 
+ # SuperLang (⌐■_■)
 
 SuperLang is a simple, dynamically-typed scripting language designed for learning and experimentation.  
 *This was made as part of the academic coursework for Language Design and Implementation module.*
